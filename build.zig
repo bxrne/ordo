@@ -142,6 +142,33 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_mod_tests.step);
     test_step.dependOn(&run_exe_tests.step);
 
+    // Examples
+    const examples_step = b.step("examples", "Build examples");
+
+    const append_example = b.addExecutable(.{
+        .name = "append",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("examples/append.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "ordo", .module = mod },
+            },
+        }),
+    });
+
+    b.installArtifact(append_example);
+
+    const append_step = b.step("examples:append", "Run append example");
+    const append_cmd = b.addRunArtifact(append_example);
+    append_step.dependOn(&append_cmd.step);
+    append_cmd.step.dependOn(b.getInstallStep());
+    examples_step.dependOn(&append_example.step);
+
+    if (b.args) |args| {
+        append_cmd.addArgs(args);
+    }
+
     // Just like flags, top level steps are also listed in the `--help` menu.
     //
     // The Zig build system is entirely implemented in userland, which means
@@ -153,4 +180,4 @@ pub fn build(b: *std.Build) void {
     //
     // Lastly, the Zig build system is relatively simple and self-contained,
     // and reading its source code will allow you to master it.
-}
+    }
